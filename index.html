@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>APK Cloud Builder</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #ffffff; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 500px; margin: auto; border: 1px solid #ddd; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        h2 { text-align: center; color: #000; margin-bottom: 25px; }
+        
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 14px; }
+        input, textarea { width: 100%; margin: 8px 0; padding: 15px; border: 2px solid #eee; border-radius: 12px; font-size: 16px; box-sizing: border-box; transition: 0.3s; }
+        input:focus, textarea:focus { border-color: #007AFF; outline: none; }
+        
+        .upload-zone { border: 2px dashed #007AFF; padding: 20px; border-radius: 15px; text-align: center; cursor: pointer; color: #007AFF; margin-top: 10px; }
+        #preview { width: 80px; height: 80px; display: none; margin: 10px auto; border-radius: 15px; object-fit: cover; border: 2px solid #eee; }
+        
+        .build-btn { background: #007AFF; color: #fff; padding: 20px; width: 100%; border: none; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,122,255,0.3); }
+        .build-btn:disabled { background: #ccc; box-shadow: none; }
+
+        #status-bar { display: none; margin-top: 20px; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>APK BUILDER (PRO)</h2>
+    
+    <label>Название приложения:</label>
+    <input type="text" id="appName" placeholder="Введите имя...">
+
+    <label>Иконка из галереи:</label>
+    <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+        <span id="labelTxt">Выбрать фото</span>
+        <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="loadIcon(event)">
+        <img id="preview">
+    </div>
+
+    <label>Программный код:</label>
+    <textarea id="appCode" rows="6" placeholder="Вставьте код (Java/Kotlin)..."></textarea>
+
+    <button id="sendBtn" class="build-btn" onclick="sendToServer()">ОТПРАВИТЬ НА СЕРВЕР</button>
+
+    <div id="status-bar"></div>
+</div>
+
+<script>
+    let base64Icon = "";
+    const SERVER_URL = "https://server-network-manager--denis19sl02.replit.app/build"; // Добавил путь /build (уточни у себя в коде сервера)
+
+    function loadIcon(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function() {
+            base64Icon = reader.result;
+            document.getElementById('preview').src = base64Icon;
+            document.getElementById('preview').style.display = 'block';
+            document.getElementById('labelTxt').style.display = 'none';
+        }
+        reader.readAsDataURL(file);
+    }
+
+    async function sendToServer() {
+        const name = document.getElementById('appName').value;
+        const code = document.getElementById('appCode').value;
+        const btn = document.getElementById('sendBtn');
+        const status = document.getElementById('status-bar');
+
+        if (!name || !code || !base64Icon) {
+            alert("Заполни все поля и выбери иконку!");
+            return;
+        }
+
+        // Блокируем кнопку и показываем статус
+        btn.disabled = true;
+        btn.innerText = "ОТПРАВКА...";
+        status.style.display = "block";
+        status.className = "";
+        status.innerText = "⏳ Соединение с сервером Replit...";
+
+        const payload = {
+            project_name: name,
+            icon_data: base64Icon,
+            source_code: code,
+            timestamp: new Date().toISOString()
+        };
+
+        try {
+            const response = await fetch(SERVER_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                status.className = "success";
+                status.innerText = "✅ ДАННЫЕ ОТПРАВЛЕНЫ! Сервер начал сборку APK.";
+                btn.innerText = "ОТПРАВЛЕНО";
+            } else {
+                throw new Error("Ошибка сервера: " + response.status);
+            }
+        } catch (err) {
+            status.className = "error";
+            status.innerText = "❌ ОШИБКА: Сервер недоступен или блокирует запрос (CORS).";
+            btn.disabled = false;
+            btn.innerText = "ПОПРОБОВАТЬ СНОВА";
+        }
+    }
+</script>
+
+</body>
+</html>
