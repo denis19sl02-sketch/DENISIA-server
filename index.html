@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional APK Packer</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #ffffff; padding: 20px; display: flex; justify-content: center; }
+        .card { width: 100%; max-width: 500px; border: 1px solid #ddd; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; margin-bottom: 20px; }
+        label { display: block; margin-top: 15px; font-weight: bold; }
+        input[type="text"], textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        .file-btn { border: 2px dashed #007AFF; padding: 20px; text-align: center; border-radius: 10px; cursor: pointer; margin-top: 10px; }
+        #preview { width: 60px; height: 60px; display: none; margin: 10px auto; border-radius: 10px; object-fit: cover; }
+        .btn-main { background: #000; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 16px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        .btn-copy { background: #28a745; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 16px; cursor: pointer; margin-top: 10px; display: none; }
+        #output { width: 100%; height: 100px; margin-top: 15px; font-size: 10px; display: none; background: #f4f4f4; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>APK BUILDER (PACKER)</h2>
+    
+    <label>Название:</label>
+    <input type="text" id="name" placeholder="App Name">
+
+    <label>Иконка:</label>
+    <div class="file-btn" onclick="document.getElementById('file').click()">
+        <span id="txt">Выбрать из галереи</span>
+        <input type="file" id="file" accept="image/*" style="display:none" onchange="loadImg(event)">
+        <img id="preview">
+    </div>
+
+    <label>Код (Java/Kotlin):</label>
+    <textarea id="code" rows="5" placeholder="Paste your code here..."></textarea>
+
+    <button class="btn-main" onclick="packData()">1. СФОРМИРОВАТЬ ПАКЕТ</button>
+    
+    <textarea id="output" readonly></textarea>
+    <button id="copyBtn" class="btn-copy" onclick="copyToClipboard()">2. СКОПИРОВАТЬ В БУФЕР</button>
+</div>
+
+<script>
+    let iconBase64 = "";
+
+    function loadImg(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            iconBase64 = event.target.result;
+            document.getElementById('preview').src = iconBase64;
+            document.getElementById('preview').style.display = 'block';
+            document.getElementById('txt').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function packData() {
+        const name = document.getElementById('name').value;
+        const code = document.getElementById('code').value;
+        
+        if(!name || !code || !iconBase64) return alert("Заполни все поля!");
+
+        const packet = {
+            appName: name,
+            icon: iconBase64,
+            source: code,
+            date: new Date().toISOString()
+        };
+
+        const out = document.getElementById('output');
+        out.value = JSON.stringify(packet);
+        out.style.display = 'block';
+        document.getElementById('copyBtn').style.display = 'block';
+        alert("Пакет данных создан! Теперь нажми кнопку 'Копировать'.");
+    }
+
+    function copyToClipboard() {
+        const copyText = document.getElementById("output");
+        
+        // Метод 1: Современный API
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(copyText.value).then(() => {
+                alert("СКОПИРОВАНО В БУФЕР!");
+            }).catch(err => {
+                fallbackCopy(copyText);
+            });
+        } else {
+            // Метод 2: Старый метод (для незащищенных соединений)
+            fallbackCopy(copyText);
+        }
+    }
+
+    function fallbackCopy(element) {
+        element.select();
+        element.setSelectionRange(0, 99999); // Для мобильных
+        try {
+            document.execCommand("copy");
+            alert("СКОПИРОВАНО (через fallback)!");
+        } catch (err) {
+            alert("Ошибка копирования. Выделите текст в окне вручную.");
+        }
+    }
+</script>
+
+</body>
+</html>
